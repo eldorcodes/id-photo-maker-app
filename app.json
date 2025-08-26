@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "ID Photo Maker",
+    "slug": "id-photo-maker",
+    "version": "1.0.0",
+    "scheme": "idphoto",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.studybridge.idphoto",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app requires access to your camera to take ID photos.",
+        "NSPhotoLibraryUsageDescription": "This app requires access to your photo library to select ID photos.",
+        "NSPhotoLibraryAddUsageDescription": "This app requires access to save processed ID photos to your photo library."
+      }
+    },
+    "android": {
+      "package": "com.studybridge.idphoto",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": [
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
+        "READ_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "EXPO_PUBLIC_API_URL": "https://idphoto-backend-135042514618.us-central1.run.app",
+      "EXPO_PUBLIC_FORCE_FAST": "0",
+      "eas": {
+        "projectId": "d8c31e49-fb55-4ea6-9d80-56a0dee1442a"
+      }
+    }
+  }
+}
