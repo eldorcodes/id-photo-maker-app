@@ -1,25 +1,136 @@
+// App.js
 import 'react-native-gesture-handler';
 import 'react-native-reanimated';
-import React from 'react';
+
+import React, { useEffect, useRef, useState } from 'react';
+import { Platform, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { NavigationContainer } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  NavigationContainer,
+  DefaultTheme as NavLight,
+  DarkTheme as NavDark,
+} from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { StatusBar } from 'expo-status-bar';
+
 import HomeScreen from './src/screens/HomeScreen';
 import EditScreen from './src/screens/EditScreen';
 import ExportScreen from './src/screens/ExportScreen';
 
+/** —— Branding (from your project memory) —— */
+const BRAND = {
+  primary: '#2563EB',   // accent
+  dark: '#0f172a',
+  bg: '#ffffff',
+};
+
+/** —— Theming —— */
+const LightTheme = {
+  ...NavLight,
+  colors: {
+    ...NavLight.colors,
+    primary: BRAND.primary,
+    background: BRAND.bg,
+    card: '#ffffff',
+    text: BRAND.dark,
+    border: '#e5e7eb',
+  },
+};
+
+const DarkTheme = {
+  ...NavDark,
+  colors: {
+    ...NavDark.colors,
+    primary: BRAND.primary,
+  },
+};
+
+/** —— Deep linking (matches app.json -> "scheme": "idphoto") —— */
+const linking = {
+  prefixes: ['idphoto://'],
+  config: {
+    screens: {
+      Home: '',
+      Edit: 'edit',
+      Export: 'export',
+    },
+  },
+};
+
+/** —— Optional: persist nav state between cold starts —— */
+const PERSISTENCE_KEY = '@nav-state-v1';
+
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+  const scheme = useColorScheme();
+  const navRef = useRef(null);
+  const [isReady, setReady] = useState(false);
+  const [initialState, setInitialState] = useState();
+
+  useEffect(() => {
+    (async () => {
+      try {
+        // Don’t persist in Expo Go on web to avoid noisy prompts
+        if (Platform.OS !== 'web') {
+          const state = await AsyncStorage.getItem(PERSISTENCE_KEY);
+          if (state) setInitialState(JSON.parse(state));
+        }
+      } catch {}
+      setReady(true);
+    })();
+  }, []);
+
+  if (!isReady) return null;
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <NavigationContainer>
-        <Stack.Navigator>
-          <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'ID Photo Maker' }} />
-          <Stack.Screen name="Edit" component={EditScreen} options={{ title: 'Edit Photo' }} />
-          <Stack.Screen name="Export" component={ExportScreen} options={{ title: 'Export' }} />
-        </Stack.Navigator>
-      </NavigationContainer>
+      <SafeAreaProvider>
+        <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+        <NavigationContainer
+          ref={navRef}
+          linking={linking}
+          theme={scheme === 'dark' ? DarkTheme : LightTheme}
+          onStateChange={async (state) => {
+            try {
+              await AsyncStorage.setItem(PERSISTENCE_KEY, JSON.stringify(state));
+            } catch {}
+          }}
+        >
+          <Stack.Navigator
+            // Better Android back UX
+            screenOptions={{
+              headerShadowVisible: false,
+              headerStyle: { backgroundColor: '#ffffff' },
+              headerTintColor: BRAND.primary,
+              headerTitleStyle: { fontWeight: '800', letterSpacing: 0.2 },
+              contentStyle: { backgroundColor: '#ffffff' },
+              animation: Platform.select({ ios: 'default', android: 'fade' }),
+              gestureEnabled: true,
+              // iOS swipe-back & Android back both enabled
+            }}
+            backBehavior="history"
+          >
+            <Stack.Screen
+              name="Home"
+              component={HomeScreen}
+              options={{ title: 'ID Photo Maker' }}
+            />
+            <Stack.Screen
+              name="Edit"
+              component={EditScreen}
+              options={{ title: 'Edit Photo' }}
+            />
+            <Stack.Screen
+              name="Export"
+              component={ExportScreen}
+              options={{ title: 'Export' }}
+            />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

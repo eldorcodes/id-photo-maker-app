@@ -1,18 +1,56 @@
 // src/screens/EditScreen.js
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Dimensions, TouchableOpacity,
-  ActivityIndicator, Alert, Image, Platform,
+   ActivityIndicator, Alert, Image, Platform
 } from 'react-native';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { bgReplaceWhite, bgReplaceColor } from '../utils/api';
 import LottieView from 'lottie-react-native';
 
-const { width: SCREEN_W } = Dimensions.get('window');
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 export default function EditScreen({ route, navigation }) {
   const { asset, size, selectedKey } = route.params || {};
+  const isDV = selectedKey === 'dv';
+
   const [working, setWorking] = useState(false);
+
+  const [progress, setProgress] = useState(0);
+  const progressTimerRef = useRef(null);
+
+  // Start a soft (simulated) progress that climbs toward a ceiling (e.g., 95%)
+  const beginProgress = (ceiling = 95, intervalMs = 120) => {
+    // reset
+    setProgress(0);
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    progressTimerRef.current = setInterval(() => {
+      setProgress((p) => {
+        if (p >= ceiling) return p;
+        // Ease-in step: smaller as we approach ceiling
+        const step = Math.max(1, Math.round((100 - p) / 20));
+        return Math.min(ceiling, p + step);
+      });
+    }, intervalMs);
+  };
+
+  // Snap to 100 and clear timer
+  const endProgress = () => {
+    if (progressTimerRef.current) {
+      clearInterval(progressTimerRef.current);
+      progressTimerRef.current = null;
+    }
+    setProgress(100);
+    // Optional: reset to 0 after a short moment so next run starts fresh
+    setTimeout(() => setProgress(0), 500);
+  };
+
+  // Safety: clear timer if screen unmounts
+  useEffect(() => {
+    return () => {
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    };
+  }, []);
 
   // Preview state (always the latest baked/processed image)
   const [processed, setProcessed] = useState({
@@ -28,7 +66,10 @@ export default function EditScreen({ route, navigation }) {
     return a;
   }, [size]);
   const frameW = SCREEN_W - 24;
-  const frameH = frameW / aspect;
+  const rawH = frameW / Math.max(0.4, Math.min(2, aspect)); // guard against bad ratios
+  const frameH = Math.min(rawH, SCREEN_H * 0.48);           // cap to ~48% of screen height
+
+  useEffect(() => { console.log('Preset mm:', size?.mm); }, [size]);
 
   // Ensure PNG base64 for the server
   const ensurePngBase64 = async () => {
@@ -54,6 +95,7 @@ export default function EditScreen({ route, navigation }) {
   const onRotate = async () => {
     try {
       setWorking(true);
+      beginProgress(85);
       const inputUri = processed.uri || `data:image/png;base64,${await ensurePngBase64()}`;
       const rotated = await ImageManipulator.manipulateAsync(
         inputUri,
@@ -71,6 +113,7 @@ export default function EditScreen({ route, navigation }) {
       Alert.alert('Rotate', 'Unable to rotate the photo.');
     } finally {
       setWorking(false);
+      endProgress();
     }
   };
 
@@ -87,6 +130,7 @@ export default function EditScreen({ route, navigation }) {
   const onBackgroundWhite = async () => {
     try {
       setWorking(true);
+      beginProgress(95);
       const b64 = await getBase64();
       const res = await bgReplaceWhite(b64);
       console.log('bg-res ←', { mode: res?.mode, len: res?.imageBase64?.length || 0, error: res?.error });
@@ -102,13 +146,19 @@ export default function EditScreen({ route, navigation }) {
       Alert.alert('Background', 'Could not replace the background automatically. Try a photo with a simpler background or better lighting.');
     } finally {
       setWorking(false);
+      endProgress();
     }
   };
 
   // Replace background → blue (e.g. #2D6AE3)
   const onBackgroundBlue = async () => {
+    if (isDV) {
+      Alert.alert('DV Lottery', 'DV Lottery requires a plain white background.');
+      return;
+    }
     try {
       setWorking(true);
+      beginProgress(95);
       const b64 = await getBase64();
       const hex = '#2D6AE3';
       const res = await bgReplaceColor(b64, hex);
@@ -125,6 +175,7 @@ export default function EditScreen({ route, navigation }) {
       Alert.alert('Background', 'Could not replace the background automatically. Try a photo with a simpler background or better lighting.');
     } finally {
       setWorking(false);
+      endProgress();
     }
   };
 
@@ -132,10 +183,12 @@ export default function EditScreen({ route, navigation }) {
   const onNext = async () => {
     try {
       setWorking(true);
+      beginProgress(90);
       let b64 = processed.base64 ?? (await ensurePngBase64());
 
       // Ensure we have a flattened background before export
-      if (!processed.bakedWhite && !processed.bgColor) {
+      // DV: always enforce white background regardless of current state
+      if (isDV || (!processed.bakedWhite && !processed.bgColor)) {
         const res = await bgReplaceWhite(b64);
         if (res?.imageBase64) {
           b64 = res.imageBase64;
@@ -157,13 +210,14 @@ export default function EditScreen({ route, navigation }) {
         image: { uri: tmp.uri, base64: b64 },  // keep PNG b64 for lossless
         size,
         selectedKey,
-        bgColor: processed.bgColor || '#ffffff',
+        bgColor: isDV ? '#ffffff' : (processed.bgColor || '#ffffff'),
       });
     } catch (e) {
       console.warn(e);
       Alert.alert('Continue', 'Could not prepare the photo. Please try again.');
     } finally {
       setWorking(false);
+      endProgress();
     }
   };
 
@@ -178,7 +232,7 @@ export default function EditScreen({ route, navigation }) {
     <View style={styles.container}>
       <Text style={styles.title}>{title}</Text>
 
-      <View style={[styles.frame, { width: frameW, height: frameH }]}>
+      <View style={[styles.frame, { width: frameW, height: frameH, backgroundColor: isDV ? '#ffffff' : 'transparent' }]}>
         {processed?.uri ? (
           <Image
             source={{ uri: processed.uri }}
@@ -194,32 +248,47 @@ export default function EditScreen({ route, navigation }) {
       <View style={styles.actionsRow}>
         <ToolbarButton label="Rotate ⤾" onPress={onRotate} disabled={working} variant="ghost" />
         <ToolbarButton label="Background → White" onPress={onBackgroundWhite} disabled={working} variant="primary" />
-        <ToolbarButton label="Background → Blue" onPress={onBackgroundBlue} disabled={working} variant="secondary" />
+        {!isDV && (
+          <ToolbarButton label="Background → Blue" onPress={onBackgroundBlue} disabled={working} variant="secondary" />
+        )}
         <ToolbarButton label="Next" onPress={onNext} disabled={working} variant="outline" />
       </View>
 
       <Text style={styles.note}>
         We permanently replace the background with the selected color (your face stays untouched).
       </Text>
+      {isDV && (
+        <Text style={[styles.note, { marginTop: 6, color: '#64748b' }]}>
+          DV Lottery photos require a plain white background.
+        </Text>
+      )}
 
       {working && (
-  <View style={styles.loading}>
-    <LottieView
-      source={require('../../assets/loading.json')}
-      autoPlay
-      loop
-      style={{ width: 80, height: 80 }}
-    />
-    <Text style={{ marginTop: 8, color: '#334155', fontWeight: '600' }}>
-      Processing…
-    </Text>
+  <View style={styles.loadingOverlay}>
+    <View style={styles.loadingCard}>
+      <LottieView
+        source={require('../../assets/loading.json')}
+        autoPlay
+        loop
+        style={{ width: 80, height: 80 }}
+      />
+      <Text style={{ marginTop: 8, color: '#334155', fontWeight: '600' }}>
+        Processing… {progress}%
+      </Text>
+    </View>
   </View>
-)}
+ )}
     </View>
   );
 }
 
 function ToolbarButton({ label, onPress, disabled, variant }) {
+  const textStyle =
+    variant === 'secondary' ? styles.btnSecondaryText :        // solid blue → white text
+    variant === 'primary'   ? styles.btnPrimaryText   :        // white btn w/ blue border → blue text
+    variant === 'outline'   ? styles.btnOutlineText   :        // white outline → dark text
+    styles.btnGhostText;                                        // ghost → dark text
+
   return (
     <TouchableOpacity
       disabled={disabled}
@@ -233,13 +302,7 @@ function ToolbarButton({ label, onPress, disabled, variant }) {
         disabled && styles.btnDisabled,
       ]}
     >
-      <Text
-        style={[
-          styles.btnTextBase,
-          (variant === 'outline' || variant === 'ghost') && styles.btnTextDark,
-        ]}
-        numberOfLines={1}
-      >
+      <Text style={[styles.btnTextBase, textStyle]} numberOfLines={1}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -253,6 +316,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     backgroundColor: '#fff',
   },
+
   title: {
     fontSize: 22,
     fontWeight: '800',
@@ -271,6 +335,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     overflow: 'hidden',
   },
+
   previewImage: { width: '100%', height: '100%', backgroundColor: 'transparent' },
   empty: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
 
@@ -282,71 +347,104 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
 
-  /* Buttons */
+  /* Base button */
   btnBase: {
     flexGrow: 1,
     flexBasis: '48%',
     paddingVertical: 14,
-    borderRadius: 14,                // rounder
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',             // soft shadow
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
   },
   btnTextBase: {
-    color: '#fff',
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: 0.2,
   },
-  btnTextDark: { color: '#0f172a' },
 
-  // Primary (blue)
-  btnPrimary: {
-    backgroundColor: '#2563EB',
-    borderWidth: 1,
-    borderColor: '#1e55c8',
-  },
-
-  // Secondary (pale blue outline)
-  btnSecondary: {
-    backgroundColor: '#eaf2ff',
-    borderWidth: 1,
-    borderColor: '#60a5fa',
-  },
-
-  // Outline (white with blue border)
-  btnOutline: {
-    backgroundColor: '#ffffff',
-    borderWidth: 1.5,
-    borderColor: '#2563EB',
-  },
-
-  // Ghost (subtle gray)
+  // Ghost (Rotate)
   btnGhost: {
     backgroundColor: '#f5f7fb',
     borderWidth: 1,
     borderColor: '#e6eaf2',
   },
+  btnGhostText: { color: '#0f172a' },
+
+  // Primary (Background → White)
+  btnPrimary: {
+    backgroundColor: '#ffffff',
+    borderWidth: 1.5,
+    borderColor: '#2563eb',
+  },
+  btnPrimaryText: { color: '#2563eb' },
+
+  // Secondary (Background → Blue)
+  btnSecondary: {
+    backgroundColor: '#2563eb',
+    shadowColor: '#2563eb',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  btnSecondaryText: { color: '#fff' },
+
+  // Outline (Next)
+  btnOutline: {
+    backgroundColor: '#ffffff',
+    borderWidth: 1.5,
+    borderColor: '#2563eb',
+  },
+  btnOutlineText: { color: '#2563eb' },
 
   // Disabled state
   btnDisabled: {
-    opacity: 0.55,
+    opacity: 0.4,
   },
 
   note: {
     marginTop: 10,
     color: '#475569',
     lineHeight: 20,
+    textAlign: 'center',
   },
 
   loading: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 20,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
   },
+
+  // text base stays the same
+  btnTextBase: {
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+
+  // text colors per variant
+  btnPrimaryText:  { color: '#2563EB' }, // white button with blue border → blue text
+  btnSecondaryText:{ color: '#FFFFFF' }, // solid blue button → white text
+  btnOutlineText:  { color: '#0f172a' }, // outline → dark text
+  btnGhostText:    { color: '#0f172a' }, // ghost → dark text
+  loadingOverlay: {
+  ...StyleSheet.absoluteFillObject,
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: 'rgba(15,23,42,0.2)', // subtle dim
+  zIndex: 999,
+},
+loadingCard: {
+  backgroundColor: '#fff',
+  paddingVertical: 20,
+  paddingHorizontal: 24,
+  borderRadius: 16,
+  alignItems: 'center',
+  justifyContent: 'center',
+  borderWidth: 1,
+  borderColor: '#e6eaf2',
+  shadowColor: '#000',
+  shadowOpacity: 0.1,
+  shadowRadius: 12,
+  shadowOffset: { width: 0, height: 4 },
+  elevation: 3,
+},
 });
