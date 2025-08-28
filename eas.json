@@ -1,6 +1,6 @@
 {
   "cli": {
-    "version": ">= 4.0.0",
+    "version": ">=16.18.0",
     "appVersionSource": "remote"
   },
   "build": {
@@ -12,10 +12,14 @@
       "distribution": "internal"
     },
     "production": {
+      "channel": "production",
       "autoIncrement": true,
       "ios": {
-        "image": "sdk-52",             
-        "resourceClass": "m-medium"
+        "image": "sdk-52",
+        "resourceClass": "medium"
+      },
+      "android": {
+        "resourceClass": "medium"
       }
     }
   },
@@ -23,6 +27,9 @@
     "production": {
       "ios": {
         "ascAppId": "6751552756"
+      },
+      "android": {
+        "track": "production"
       }
     }
   }
