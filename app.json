@@ -2,7 +2,7 @@
   "expo": {
     "name": "ID Photo Maker",
     "slug": "id-photo-maker",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "scheme": "idphoto",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,7 +14,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.studybridge.idphoto",
-      "buildNumber": "8",
+      "buildNumber": "9",
       "infoPlist": {
         "CFBundleDisplayName": "ID Photo Maker",
         "NSCameraUsageDescription": "This app requires access to your camera to take ID photos.",
@@ -25,7 +25,7 @@
     },
     "android": {
       "package": "com.studybridge.idphoto",
-      "versionCode": 8,
+      "versionCode": 9,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
