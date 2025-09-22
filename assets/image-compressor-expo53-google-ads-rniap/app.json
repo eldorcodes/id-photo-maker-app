@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "Image Compressor",
+    "slug": "image-compressor",
+    "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "android_app_id": "${GOOGLE_MOBILE_ADS_APP_ID_ANDROID}",
+          "ios_app_id": "${GOOGLE_MOBILE_ADS_APP_ID_IOS}"
+        }
+      ]
+    ],
+    "ios": {
+      "bundleIdentifier": "com.yourcompany.imagecompressor"
+    },
+    "android": {
+      "package": "com.yourcompany.imagecompressor"
+    }
+  }
+}
