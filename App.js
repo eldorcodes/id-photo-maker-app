@@ -1,5 +1,4 @@
 // App.js
-import 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -14,6 +13,7 @@ import {
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
+import mobileAds from 'react-native-google-mobile-ads';
 
 import HomeScreen from './src/screens/HomeScreen';
 import EditScreen from './src/screens/EditScreen';
@@ -69,6 +69,16 @@ export default function App() {
   const navRef = useRef(null);
   const [isReady, setReady] = useState(false);
   const [initialState, setInitialState] = useState();
+
+  useEffect(() => {
+    // ✅ Initialize AdMob SDK once at app startup
+    mobileAds()
+      .initialize()
+      .then(() => {
+        console.log('✅ AdMob initialized');
+      })
+      .catch((err) => console.warn('AdMob init error:', err));
+  }, []);
 
   useEffect(() => {
     (async () => {

@@ -7,6 +7,10 @@ import {
 import * as ImageManipulator from 'expo-image-manipulator';
 import { bgReplaceWhite, bgReplaceColor } from '../utils/api';
 import LottieView from 'lottie-react-native';
+import { showInterstitialAd } from '../ads/InterstitialAd';
+import { showRewardedAd } from '../ads/RewardedAd';
+import AdBanner from '../ads/AdBanner';
+
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
@@ -149,6 +153,7 @@ export default function EditScreen({ route, navigation }) {
     } finally {
       endProgress();
       setWorking(false);
+      maybeShowAd();
     }
   };
 
@@ -181,6 +186,7 @@ export default function EditScreen({ route, navigation }) {
     } finally {
       endProgress();
       setWorking(false);
+      maybeShowAd();
     }
   };
 
@@ -217,6 +223,7 @@ export default function EditScreen({ route, navigation }) {
     } finally {
       endProgress();
       setWorking(false);
+      maybeShowAd();
     }
   };
 
@@ -267,6 +274,7 @@ export default function EditScreen({ route, navigation }) {
     } finally {
       endProgress();
       setWorking(false);
+      maybeShowAd();
     }
   };
 
@@ -276,6 +284,18 @@ export default function EditScreen({ route, navigation }) {
       : selectedKey === 'dv'
       ? 'US Green Card Lottery (DV)'
       : 'Edit Photo';
+
+      // ───────────────────────────────
+// Decide which ad to show randomly
+// ───────────────────────────────
+const maybeShowAd = () => {
+  const r = Math.random();
+  if (r < 0.5) {
+    showInterstitialAd();
+  } else {
+    showRewardedAd();
+  }
+};
 
   return (
     <View style={styles.container}>
@@ -311,6 +331,11 @@ export default function EditScreen({ route, navigation }) {
           DV Lottery photos require a plain white background.
         </Text>
       )}
+
+        {/* ✅ Add the banner here */}
+    <View style={{ marginTop: 16, alignItems: 'center' }}>
+      <AdBanner placement="edit" size="adaptive" />
+    </View>
 
       {working && (
         <View style={styles.loadingOverlay}>

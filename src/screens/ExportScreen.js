@@ -1,12 +1,16 @@
 // src/screens/ExportScreen.js
 import React, { useMemo, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image, Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import Constants from 'expo-constants';
 import { composePdf, composeFinal } from '../utils/api';
 import { exportFinalImage } from '../utils/exporter';
 import { validateDvLottery, estimateEyeY } from '../utils/validators';
+import { showInterstitialAd } from '../ads/InterstitialAd';
+import { showRewardedAd } from '../ads/RewardedAd';
+import AdBanner from '../ads/AdBanner';
+
 
 const isExpoGo = Constants?.appOwnership === 'expo';
 
@@ -49,6 +53,17 @@ export default function ExportScreen({ route }) {
     return /green card lottery|dv/i.test(String(size?.label || ''));
   }, [templateKey, size]);
 
+
+  let adCounter = 0;
+const maybeShowAd = () => {
+  adCounter++;
+  if (adCounter % 3 === 0) {
+    const r = Math.random();
+    if (r < 0.6) showInterstitialAd();
+    else showRewardedAd();
+  }
+};
+
   // ---------- Single-image export ----------
   const exportPng = useCallback(async () => {
     setBusy(true);
@@ -59,6 +74,7 @@ export default function ExportScreen({ route }) {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(path, { mimeType: 'image/png', dialogTitle: 'Share ID Photo' });
       } else { Alert.alert('Saved', `Saved to ${path}`); }
+      maybeShowAd();
     } catch (e) {
       Alert.alert('Export', e.message || 'Failed to export PNG.');
     } finally {
@@ -125,6 +141,7 @@ export default function ExportScreen({ route }) {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(path, { mimeType: 'image/jpeg', dialogTitle: 'Share DV Photo (JPEG)' });
       } else { Alert.alert('Saved', `Saved to ${path}`); }
+      maybeShowAd();
     } catch (e) {
       console.error(e);
       Alert.alert('Export', e.message || 'Failed to export DV photo.');
@@ -171,6 +188,7 @@ export default function ExportScreen({ route }) {
       } else {
         Alert.alert('Saved', `Saved to ${path}`);
       }
+      maybeShowAd();
     } catch (e) {
       console.error(e);
       Alert.alert('PDF', e.message || 'Failed to create PDF sheet.');
@@ -183,6 +201,10 @@ export default function ExportScreen({ route }) {
   const pxW = useMemo(() => size?.px?.digital?.default?.w || size?.px?.print?.w || 0, [size]);
   const pxH = useMemo(() => size?.px?.digital?.default?.h || size?.px?.print?.h || 0, [size]);
   const label = useMemo(() => size?.label || 'ID Photo', [size]);
+
+
+
+
 
   return (
     <View style={styles.screen}>
@@ -235,6 +257,12 @@ export default function ExportScreen({ route }) {
         >
           <Text style={styles.primaryText}>{busy ? 'Preparing…' : (isDV ? 'Export JPEG' : 'Export PNG')}</Text>
         </TouchableOpacity>
+
+         {/* ✅ AdBanner right below button */}
+      <View style={{ marginTop: 10, marginBottom:Platform.OS === 'ios' ? 0:20 }}>
+        <AdBanner placement="export" size="adaptive" />
+      </View>
+
       </View>
     </View>
   );
