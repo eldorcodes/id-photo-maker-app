@@ -2,7 +2,7 @@
 import 'react-native-reanimated';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Platform, useColorScheme } from 'react-native';
+import { LogBox, Platform, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -18,6 +18,8 @@ import mobileAds from 'react-native-google-mobile-ads';
 import HomeScreen from './src/screens/HomeScreen';
 import EditScreen from './src/screens/EditScreen';
 import ExportScreen from './src/screens/ExportScreen';
+import { preloadInterstitial } from './src/ads/InterstitialAd';
+import { preloadRewarded } from './src/ads/RewardedAd';
 
 /** —— Branding (from your project memory) —— */
 const BRAND = {
@@ -71,13 +73,24 @@ export default function App() {
   const [initialState, setInitialState] = useState();
 
   useEffect(() => {
-    // ✅ Initialize AdMob SDK once at app startup
-    mobileAds()
-      .initialize()
-      .then(() => {
+    // Prevent repeated warnings in dev mode
+    LogBox.ignoreLogs(['new NativeEventEmitter']);
+  
+    const initAds = async () => {
+      try {
+        console.log('🚀 Initializing AdMob SDK...');
+        if (!global.adsReady) await mobileAds().initialize();
+        global.adsReady = true;
         console.log('✅ AdMob initialized');
-      })
-      .catch((err) => console.warn('AdMob init error:', err));
+    
+        preloadInterstitial();
+        preloadRewarded();
+      } catch (error) {
+        console.warn('⚠️ AdMob init error:', error);
+      }
+    };
+  
+    if (Platform.OS !== 'web') initAds();
   }, []);
 
   useEffect(() => {

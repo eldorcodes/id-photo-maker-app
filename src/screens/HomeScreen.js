@@ -131,44 +131,83 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       {/* ✅ Ad banner always visible */}
-      <AdBanner placement="home_bottom" />
+      <View style={[styles.adContainer,{marginBottom:Platform.OS === 'ios' ? 0 : 20}]}>
+      <AdBanner placement="home" size="adaptive" disabled={false} />
+    </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#ffffff' },
-  container: {
+  safe: {
     flex: 1,
-    paddingHorizontal: 18,
-    paddingBottom: 18,
-    paddingTop: Platform.select({ ios: 10, android: 14 }),
+    backgroundColor: '#f9fafb',
   },
 
-  // Header
-  headerWrap: { marginBottom: 10 },
+  container: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: Platform.select({ ios: 10, android: 16 }),
+    paddingBottom:
+      Platform.OS === 'android'
+        ? 90 // ✅ prevents text from being covered by AdBanner + Android nav bar
+        : 70, // iOS safe enough
+  },
+
+  // HEADER
+  headerWrap: {
+    marginBottom: 16,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.07,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
   h1: {
     fontSize: 26,
     lineHeight: 32,
-    fontWeight: '800',
+    fontWeight: '900',
     color: '#0f172a',
-    letterSpacing: -0.3,
+    letterSpacing: -0.4,
   },
-  sub: { marginTop: 6, color: '#6b7280', fontSize: 15, lineHeight: 20 },
+  sub: {
+    marginTop: 8,
+    color: '#64748b',
+    fontSize: 15,
+    lineHeight: 21,
+  },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 18,
-    marginBottom: 10,
+    marginTop: 14,
   },
-  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#2563eb', marginRight: 8 },
-  meta: { fontWeight: '700', color: '#111827', fontSize: 15 },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#2563eb',
+    marginRight: 8,
+  },
+  meta: {
+    fontWeight: '700',
+    color: '#111827',
+    fontSize: 15,
+  },
 
-  // Footer
-  footerWrap: { marginTop: 20 },
-  actionsRow: { flexDirection: 'row', gap: 14 },
+  // FOOTER
+  footerWrap: {
+    marginTop: 28,
+  },
 
-  // Buttons
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 14,
+  },
+
+  // BUTTONS
   btn: {
     flex: 1,
     paddingVertical: 15,
@@ -176,43 +215,73 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: '#2563eb',
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
     elevation: 3,
   },
   btnIcon: { marginRight: 8 },
+
   primary: {
     backgroundColor: '#2563eb',
-    shadowColor: '#2563eb',
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 6 },
   },
-  primaryText: { color: '#fff', fontWeight: '800', fontSize: 15, letterSpacing: 0.3 },
+  primaryText: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 16,
+  },
+
   secondary: {
     backgroundColor: '#ffffff',
     borderWidth: 1.5,
     borderColor: '#2563eb',
   },
-  secondaryText: { color: '#2563eb', fontWeight: '800', fontSize: 15, letterSpacing: 0.3 },
+  secondaryText: {
+    color: '#2563eb',
+    fontWeight: '800',
+    fontSize: 16,
+  },
 
-  // Tip card
+  // TIP CARD
   tipCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 14,
-    marginTop: 14,
-    borderRadius: 14,
-    backgroundColor: '#f8fafc',
+    padding: 16,
+    marginTop: 18,
+    borderRadius: 16,
+    backgroundColor: '#eef2ff',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: '#d4dcff',
     shadowColor: '#000',
     shadowOpacity: 0.04,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
-    elevation: 1,
+    elevation: 2,
   },
-  tipText: { color: '#475569', flex: 1, fontSize: 14, lineHeight: 20 },
+  tipText: {
+    color: '#374151',
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '500',
+  },
+
+  // Ad container stays pinned on bottom above nav bar
+  adContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: Platform.OS === 'android' ? 12 : 0,
+    paddingTop: 4,
+    backgroundColor: '#ffffff',
+    borderTopWidth: 1,
+    borderColor: '#e5e7eb',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: -2 },
+  },
 });

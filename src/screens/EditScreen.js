@@ -2,7 +2,7 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Dimensions, TouchableOpacity,
-  Alert, Image, Platform,
+  Alert, Image, Platform, InteractionManager
 } from 'react-native';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { bgReplaceWhite, bgReplaceColor } from '../utils/api';
@@ -153,7 +153,11 @@ export default function EditScreen({ route, navigation }) {
     } finally {
       endProgress();
       setWorking(false);
-      maybeShowAd();
+    
+      // Safe ad timing (fixes black screen)
+      InteractionManager.runAfterInteractions(() => {
+        setTimeout(() => maybeShowAd(), 150);
+      });
     }
   };
 
@@ -186,7 +190,11 @@ export default function EditScreen({ route, navigation }) {
     } finally {
       endProgress();
       setWorking(false);
-      maybeShowAd();
+    
+      // Safe ad timing (fixes black screen)
+      InteractionManager.runAfterInteractions(() => {
+        setTimeout(() => maybeShowAd(), 150);
+      });
     }
   };
 
@@ -223,7 +231,11 @@ export default function EditScreen({ route, navigation }) {
     } finally {
       endProgress();
       setWorking(false);
-      maybeShowAd();
+    
+      // Safe ad timing (fixes black screen)
+      InteractionManager.runAfterInteractions(() => {
+        setTimeout(() => maybeShowAd(), 150);
+      });
     }
   };
 
@@ -274,7 +286,11 @@ export default function EditScreen({ route, navigation }) {
     } finally {
       endProgress();
       setWorking(false);
-      maybeShowAd();
+    
+      // Safe ad timing (fixes black screen)
+      InteractionManager.runAfterInteractions(() => {
+        setTimeout(() => maybeShowAd(), 150);
+      });
     }
   };
 
@@ -288,13 +304,18 @@ export default function EditScreen({ route, navigation }) {
       // ───────────────────────────────
 // Decide which ad to show randomly
 // ───────────────────────────────
+
 const maybeShowAd = () => {
   const r = Math.random();
-  if (r < 0.5) {
-    showInterstitialAd();
-  } else {
-    showRewardedAd();
-  }
+  InteractionManager.runAfterInteractions(() => {
+    setTimeout(() => {
+      if (r < 0.5) {
+        showInterstitialAd();
+      } else {
+        showRewardedAd();
+      }
+    }, 150); // small buffer for safety
+  });
 };
 
   return (

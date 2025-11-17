@@ -1,6 +1,6 @@
 // src/screens/ExportScreen.js
 import React, { useMemo, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image, Platform, InteractionManager } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import Constants from 'expo-constants';
@@ -55,14 +55,21 @@ export default function ExportScreen({ route }) {
 
 
   let adCounter = 0;
-const maybeShowAd = () => {
-  adCounter++;
-  if (adCounter % 3 === 0) {
+  const maybeShowAd = () => {
+    adCounter++;
+  
+    // Only show every 3rd export (your logic)
+    if (adCounter % 3 !== 0) return;
+  
     const r = Math.random();
-    if (r < 0.6) showInterstitialAd();
-    else showRewardedAd();
-  }
-};
+  
+    InteractionManager.runAfterInteractions(() => {
+      setTimeout(() => {
+        if (r < 0.6) showInterstitialAd();
+        else showRewardedAd();
+      }, 150); 
+    });
+  };
 
   // ---------- Single-image export ----------
   const exportPng = useCallback(async () => {
@@ -74,7 +81,9 @@ const maybeShowAd = () => {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(path, { mimeType: 'image/png', dialogTitle: 'Share ID Photo' });
       } else { Alert.alert('Saved', `Saved to ${path}`); }
-      maybeShowAd();
+      InteractionManager.runAfterInteractions(() => {
+        setTimeout(() => maybeShowAd(), 150);
+      });
     } catch (e) {
       Alert.alert('Export', e.message || 'Failed to export PNG.');
     } finally {
@@ -141,7 +150,9 @@ const maybeShowAd = () => {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(path, { mimeType: 'image/jpeg', dialogTitle: 'Share DV Photo (JPEG)' });
       } else { Alert.alert('Saved', `Saved to ${path}`); }
-      maybeShowAd();
+      InteractionManager.runAfterInteractions(() => {
+        setTimeout(() => maybeShowAd(), 150);
+      });
     } catch (e) {
       console.error(e);
       Alert.alert('Export', e.message || 'Failed to export DV photo.');
@@ -188,7 +199,9 @@ const maybeShowAd = () => {
       } else {
         Alert.alert('Saved', `Saved to ${path}`);
       }
-      maybeShowAd();
+      InteractionManager.runAfterInteractions(() => {
+        setTimeout(() => maybeShowAd(), 150);
+      });
     } catch (e) {
       console.error(e);
       Alert.alert('PDF', e.message || 'Failed to create PDF sheet.');

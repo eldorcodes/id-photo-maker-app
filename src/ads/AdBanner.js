@@ -12,31 +12,35 @@ export default function AdBanner({
   const [failCount, setFailCount] = useState(0);
 
   const { unitId, bannerSize } = useMemo(() => {
-    // ✅ Primary source of ad IDs from app.config.js -> extra.*
+    // Load config from app.config.js extra
     const extra = Constants?.expoConfig?.extra ?? {};
+   
 
     const pick = (v) => (typeof v === 'string' ? v.trim() : '');
 
+    // ✅ Only use the env variables YOU actually have
     const iosUnitRaw =
       extra?.admobBannerIos ??
       process.env.EXPO_PUBLIC_ADMOB_BANNER_ID_IOS ??
-      process.env.ADMOB_BANNER_ID_IOS ??
       '';
+
+      console.log("==== iOS Banner Unit ID =", iosUnitRaw);
 
     const androidUnitRaw =
       extra?.admobBannerAndroid ??
       process.env.EXPO_PUBLIC_ADMOB_BANNER_ID_ANDROID ??
-      process.env.ADMOB_BANNER_ID_ANDROID ??
       '';
 
-    const iosUnit = pick(iosUnitRaw);
+      const iosUnit = extra?.admobBannerIos || TestIds.BANNER;
     const androidUnit = pick(androidUnitRaw);
 
+    // If nothing found, fallback to test IDs
     const resolvedUnit =
       Platform.OS === 'ios'
         ? iosUnit || TestIds.BANNER
         : androidUnit || TestIds.BANNER;
 
+    // Banner sizing
     let resolvedSize = BannerAdSize.ANCHORED_ADAPTIVE_BANNER;
     switch (size) {
       case 'banner':
@@ -64,36 +68,32 @@ export default function AdBanner({
 
   return (
     <View
-  accessibilityLabel={`ad-banner-${placement}`}
-  style={[
-    styles.container,
-    containerStyle,
-    {
-      backgroundColor: '#fff',
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderColor: '#ddd',
-      paddingBottom: Platform.OS === 'android' ? 20 : 0, // keeps it above tab bar
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-  ]}
->
-  <BannerAd
-    unitId={unitId}
-    size={bannerSize}
-    requestOptions={{ requestNonPersonalizedAdsOnly: false }}
-    onAdLoaded={() => {
-      if (__DEV__) console.log(`[AdBanner:${placement}] loaded`);
-    }}
-    onAdFailedToLoad={(err) => {
-      if (__DEV__) console.warn(`[AdBanner:${placement}] failed:`, err);
-      setFailCount((c) => c + 1);
-    }}
-  />
-</View>
+      accessibilityLabel={`ad-banner-${placement}`}
+      style={[styles.container, containerStyle]}
+    >
+      <BannerAd
+        unitId={unitId}
+        size={bannerSize}
+        requestOptions={{ requestNonPersonalizedAdsOnly: false }}
+        onAdLoaded={() => {
+          if (__DEV__) console.log(`[AdBanner:${placement}] loaded`);
+        }}
+        onAdFailedToLoad={(err) => {
+          if (__DEV__) console.warn(`[AdBanner:${placement}] failed:`, err);
+          setFailCount((c) => c + 1);
+        }}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { alignItems: 'center', justifyContent: 'center', paddingVertical: 6 },
+  container: {
+    minHeight: 70,               // ⭐ FIX: ensures banner space exists
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+    backgroundColor: '#ffffff',
+  },
 });

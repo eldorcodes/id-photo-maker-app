@@ -11,13 +11,14 @@ const adUnitId =
 
 const interstitialId = __DEV__ ? TestIds.INTERSTITIAL : adUnitId;
 
+// ✅ Create global interstitial
 const interstitial = InterstitialAd.createForAdRequest(interstitialId, {
   requestNonPersonalizedAdsOnly: true,
 });
 
 let isLoaded = false;
 
-// Preload
+// ✅ Listeners
 interstitial.addAdEventListener(AdEventType.LOADED, () => {
   isLoaded = true;
   console.log('✅ Interstitial ad loaded');
@@ -33,7 +34,18 @@ interstitial.addAdEventListener(AdEventType.ERROR, (err) => {
   isLoaded = false;
 });
 
+// ✅ First load
 interstitial.load();
+
+// 👇 Exported functions (so App.js can call them)
+export const preloadInterstitial = () => {
+  console.log('📦 Preloading interstitial...');
+  try {
+    interstitial.load();
+  } catch (err) {
+    console.warn('preloadInterstitial error:', err);
+  }
+};
 
 export const showInterstitialAd = () => {
   if (isLoaded) {
