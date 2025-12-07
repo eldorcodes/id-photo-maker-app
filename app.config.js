@@ -4,7 +4,7 @@ export default {
   expo: {
     name: "ID Photo Maker",
     slug: "id-photo-maker",
-    version: "1.3.4",
+    version: "1.3.5",
     scheme: "idphoto",
     orientation: "portrait",
     icon: "./assets/icon.png",
@@ -20,7 +20,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.studybridge.idphoto",
-      buildNumber: "37",
+      buildNumber: "38",
       config: {
         googleMobileAdsAppId: process.env.EXPO_PUBLIC_ADMOB_APP_ID_IOS,
       },
@@ -38,7 +38,7 @@ export default {
 
     android: {
       package: "com.studybridge.idphoto",
-      versionCode: 37,
+      versionCode: 38,
     
       // ✅ REQUIRED: Google AdMob App ID
       config: {
